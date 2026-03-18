@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UgnayanCenter — Calamity Victim Registry</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d45;
+  --accent: #e84040;
+  --accent2: #ff6b35;
+  --safe: #22c55e;
+  --injured: #f59e0b;
+  --missing: #e84040;
+  --deceased: #6b7280;
+  --evacuated: #3b82f6;
+  --hospitalized: #a855f7;
+  --text: #e8eaf0;
+  --text2: #8899aa;
+  --text3: #4a5568;
+  --glow: rgba(232,64,64,0.15);
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 12px;
+  --transition: 0.2s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── NOISE OVERLAY ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,14,26,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  overflow: visible;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  flex-shrink: 0; /* prevent brand from collapsing */
+  min-width: 0;
+}
+.nav-brand .logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+}
+.nav-brand span { color: var(--accent); }
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  overflow: visible;
+  position: relative;
+}
+.nav-tab {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  min-height: 44px; /* touch target */
+  touch-action: manipulation;
+}
+.nav-tab:hover { background: var(--surface); color: var(--text); }
+.nav-tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+
+.nav-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-width: 0; }
+.nav-user-badge {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text2);
+  max-width: 140px;
+  overflow: hidden;
+}
+#navUserName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-user-badge .role-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.nav-user-badge.visible { display: flex; }
+
+.btn-logout {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: none;
+  min-height: 36px;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+.btn-logout:hover { border-color: var(--accent); color: var(--accent); }
+.btn-logout.visible { display: block; }
+
+/* ─── PAGES ─── */
+.page { display: none; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* ─── HERO ─── */
+.hero {
+  padding: 60px 24px 40px;
+  text-align: center;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, 100vw); height: 300px;
+  background: radial-gradient(ellipse at center, rgba(232,64,64,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid rgba(232,64,64,0.4);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeUp 0.6s ease both;
+}
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  animation: fadeUp 0.6s 0.1s ease both;
+}
+.hero h1 .highlight {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent; /* fallback */
+}
+.hero p {
+  color: var(--text2);
+  font-size: 1.05rem;
+  max-width: 520px;
+  margin: 0 auto 36px;
+  line-height: 1.7;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+
+/* ─── SEARCH BOX ─── */
+.search-container {
+  max-width: 600px;
+  margin: 0 auto;
+  animation: fadeUp 0.6s 0.3s ease both;
+}
+.search-box {
+  display: flex;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.search-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+.search-box input {
+  flex: 1;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem; /* must stay ≥16px to prevent iOS auto-zoom */
+  min-width: 0; /* prevents flex overflow */
+}
+.search-box input::placeholder { color: var(--text3); }
+.btn-search {
+  padding: 14px 24px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--transition);
+  letter-spacing: 0.02em;
+  touch-action: manipulation;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-search:hover { background: #c73232; }
+
+/* ─── RESULTS ─── */
+.results-area {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.results-count {
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+.results-count strong { color: var(--text); }
+
+/* ─── VICTIM CARD ─── */
+.victim-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+  transition: border-color var(--transition), transform var(--transition);
+  animation: fadeUp 0.3s ease both;
+  cursor: pointer;
+}
+.victim-card:hover {
+  border-color: rgba(232,64,64,0.3);
+  transform: translateY(-1px);
+}
+
+.victim-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.victim-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.victim-info { min-width: 0; }
+.victim-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.victim-meta {
+  font-size: 0.82rem;
+  color: var(--text2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.victim-meta span { display: flex; align-items: center; gap: 4px; }
+
+.victim-status-col { text-align: right; }
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.status-badge.safe { background: rgba(34,197,94,0.15); color: var(--safe); border: 1px solid rgba(34,197,94,0.3); }
+.status-badge.injured { background: rgba(245,158,11,0.15); color: var(--injured); border: 1px solid rgba(245,158,11,0.3); }
+.status-badge.missing { background: rgba(232,64,64,0.15); color: var(--missing); border: 1px solid rgba(232,64,64,0.3); }
+.status-badge.deceased { background: rgba(107,114,128,0.15); color: var(--deceased); border: 1px solid rgba(107,114,128,0.3); }
+.status-badge.evacuated { background: rgba(59,130,246,0.15); color: var(--evacuated); border: 1px solid rgba(59,130,246,0.3); }
+.status-badge.hospitalized { background: rgba(168,85,247,0.15); color: var(--hospitalized); border: 1px solid rgba(168,85,247,0.3); }
+
+.victim-location-tag {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ─── EMPTY STATE ─── */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text2);
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+.empty-state h3 { font-family: var(--font-head); margin-bottom: 8px; color: var(--text); }
+
+/* ─── CONTAINER ─── */
+.container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+.section-title {
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.section-sub { color: var(--text2); font-size: 0.88rem; margin-bottom: 28px; }
+
+/* ─── FORMS ─── */
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-row.single { grid-template-columns: 1fr; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.form-label .req { color: var(--accent); margin-left: 2px; }
+
+.form-input, .form-select, .form-textarea {
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem; /* ≥16px prevents iOS Safari auto-zoom */
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+  -webkit-appearance: none; /* normalize iOS select appearance */
+  appearance: none;
+}
+.form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+.form-textarea { resize: vertical; min-height: 90px; }
+.form-select option { background: var(--surface2); }
+
+.btn { 
+  padding: 11px 22px;
+  border-radius: 8px;
+  border: none;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #c73232; transform: translateY(-1px); }
+.btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: var(--safe); }
+.btn-success:hover { background: rgba(34,197,94,0.25); }
+.btn-danger { background: rgba(232,64,64,0.15); border: 1px solid rgba(232,64,64,0.3); color: var(--accent); }
+.btn-danger:hover { background: rgba(232,64,64,0.25); }
+.btn { 
+  padding: 11px 22px;
+  border-radius: 8px;
+  border: none;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px; /* WCAG touch target */
+  touch-action: manipulation; /* remove 300ms tap delay on mobile */
+}
+.btn-sm { padding: 7px 14px; font-size: 0.8rem; min-height: 36px; }
+.btn-full { width: 100%; justify-content: center; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ─── LOGIN PAGE ─── */
+.login-wrap {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 50%; transform: translateX(-50%);
+  width: 60%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  border-radius: 2px;
+}
+.login-icon {
+  width: 56px; height: 56px;
+  background: var(--glow);
+  border: 1px solid rgba(232,64,64,0.3);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+}
+.login-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+.login-sub { color: var(--text2); font-size: 0.88rem; margin-bottom: 28px; }
+
+/* ─── TOAST ─── */
+#toast-container {
+  position: fixed;
+  bottom: 24px; right: 16px; left: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.3s ease;
+  pointer-events: all;
+  max-width: min(320px, calc(100vw - 32px));
+  word-break: break-word;
+}
+.toast.success { border-color: rgba(34,197,94,0.4); }
+.toast.success .t-icon { color: var(--safe); }
+.toast.error { border-color: rgba(232,64,64,0.4); }
+.toast.error .t-icon { color: var(--accent); }
+.toast.info { border-color: rgba(59,130,246,0.4); }
+.toast.info .t-icon { color: var(--evacuated); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(5,8,16,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); /* Safari */
+  display: none;
+  align-items: flex-end; /* mobile: slide up from bottom */
+  justify-content: center;
+  padding: 0;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0; /* bottom-sheet on mobile */
+  width: 100%;
+  max-width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  animation: slideUp 0.28s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (min-width: 641px) {
+  .modal-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+  .modal {
+    border-radius: 16px;
+    max-width: 600px;
+    max-height: 90vh;
+    animation: fadeUp 0.25s ease;
+  }
+}
+.modal-header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+/* Bottom-sheet drag handle on mobile */
+.modal::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+@media (min-width: 641px) {
+  .modal::before { display: none; }
+  .modal-header { padding: 24px 24px 0; }
+}
+.modal-title { font-family: var(--font-head); font-size: 1.2rem; font-weight: 800; }
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.modal-close:hover { border-color: var(--accent); color: var(--accent); }
+.modal-body { padding: 20px 24px 24px; }
+
+/* ─── ADMIN TABLE ─── */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+thead { background: var(--surface2); }
+th {
+  padding: 12px 16px;
+  text-align: left;
+  font-family: var(--font-head);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(30,45,69,0.5);
+  color: var(--text);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.td-actions { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+/* ─── STATS GRID ─── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.stat-card.s-total::after { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.stat-card.s-safe::after { background: var(--safe); }
+.stat-card.s-injured::after { background: var(--injured); }
+.stat-card.s-missing::after { background: var(--missing); }
+.stat-card.s-evacuated::after { background: var(--evacuated); }
+.stat-card.s-hospitalized::after { background: var(--hospitalized); }
+.stat-number {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+  letter-spacing: -0.04em;
+}
+.stat-label { font-size: 0.78rem; color: var(--text2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ─── TABS ─── */
+.tab-group {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+.tab-group::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+.tab-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: -1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ─── LOADING ─── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+.loading-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(10,14,26,0.7);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+.loading-overlay.active { display: flex; }
+.loading-text { color: var(--text2); font-size: 0.9rem; }
+
+/* ─── CONFIG BANNER ─── */
+.config-banner {
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--injured);
+  flex-wrap: wrap;
+}
+
+/* ─── VICTIM DETAIL MODAL ─── */
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.detail-item label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text2); font-weight: 600; display: block; margin-bottom: 4px; }
+.detail-item p { color: var(--text); font-size: 0.92rem; }
+
+/* ─── SETTINGS ─── */
+.settings-section { margin-bottom: 28px; }
+.settings-title { font-family: var(--font-head); font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── CALAMITY BADGE ─── */
+.calamity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(255,107,53,0.15);
+  border: 1px solid rgba(255,107,53,0.3);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  color: var(--accent2);
+  font-weight: 600;
+}
+
+/* ─── PULSE DOT ─── */
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  display: inline-block;
+  position: relative;
+}
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  animation: pulsering 1.5s ease-out infinite;
+}
+.pulse-dot.red { background: var(--accent); }
+.pulse-dot.red::after { border: 2px solid var(--accent); }
+@keyframes pulsering {
+  0% { opacity: 1; transform: scale(0.8); }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr; } /* single col on small phone */
+  .detail-grid { grid-template-columns: 1fr; }
+  .nav-tabs { display: none; }
+  .victim-card { grid-template-columns: auto 1fr; }
+  .victim-status-col { display: none; }
+  .mobile-status { display: flex; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .login-card { padding: 28px 20px; }
+  /* Reduce hero vertical padding on mobile */
+  .hero { padding: 32px 16px 28px; }
+  .hero p { font-size: 0.95rem; margin-bottom: 24px; }
+  /* Reduce container padding */
+  .container { padding: 20px 16px; }
+  /* Login fill more vertical space with keyboard open */
+  .login-wrap { min-height: auto; padding: 24px 16px; align-items: flex-start; padding-top: 40px; }
+  /* Admin toolbar wraps */
+  #tab-victims > div:first-child { flex-direction: column; align-items: stretch; }
+  #adminSearchInput { max-width: 100% !important; }
+  /* Reduce form card padding on mobile */
+  .form-card { padding: 16px; }
+  /* Settings panel full width */
+  .settings-panel { border-radius: 16px 16px 0 0; max-height: 88vh; }
+  /* Nav brand text shortened on very small screens */
+  .nav-brand { font-size: 1.05rem; }
+  /* Help button text hidden on very small screen, show icon only */
+  .nav-help-btn .help-text { display: none; }
+}
+
+@media (max-width: 380px) {
+  .form-row.triple { grid-template-columns: 1fr; }
+  .nav-user-badge { display: none !important; } /* hide badge on tiny screens when logged in */
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 900px) {
+  .form-row.triple { grid-template-columns: 1fr 1fr; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.mobile-status { display: none; margin-top: 6px; }
+body.compact-mode .victim-card { padding: 12px; }
+body.compact-mode .stat-card { padding: 12px; }
+
+/* ─── FILTER SELECT ─── */
+.filter-select {
+  padding: 8px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1rem; /* ≥16px prevents iOS zoom */
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.filter-select:focus { border-color: var(--accent); }
+.filter-select option { background: var(--surface2); }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── LIGHT THEME ─── */
+body.light-theme {
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --surface2: #e8edf3;
+  --border: #d0daea;
+  --text: #1a2235;
+  --text2: #4a5f7a;
+  --text3: #8899aa;
+  --glow: rgba(232,64,64,0.10);
+}
+body.light-theme nav { background: rgba(240,244,248,0.95); }
+body.light-theme .search-box input { color: var(--text); }
+body.light-theme .form-input,
+body.light-theme .form-select,
+body.light-theme .form-textarea {
+  color: var(--text);
+  -webkit-text-fill-color: var(--text); /* Safari fix */
+}
+body.light-theme .filter-select { color: var(--text); }
+/* Fix gradient text on light theme - ensure readability */
+body.light-theme .hero h1 .highlight {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── SETTINGS PANEL ─── */
+.settings-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(5,8,16,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px); /* Safari */
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+.settings-overlay.open { display: flex; }
+.settings-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: slideUp 0.28s ease;
+  position: relative;
+}
+@media (min-width: 641px) {
+  .settings-overlay { align-items: center; padding: 24px; }
+  .settings-panel { border-radius: 16px; animation: fadeUp 0.25s ease; }
+}
+.settings-panel::before {
+  content: '';
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  width: 50%; height: 2px;
+  background: linear-gradient(90deg, transparent, #a855f7, transparent);
+}
+.settings-panel-header {
+  padding: 24px 24px 0;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.settings-panel-title {
+  font-family: var(--font-head);
+  font-size: 1.2rem; font-weight: 800;
+  display: flex; align-items: center; gap: 10px;
+}
+.settings-panel-body { padding: 0 24px 24px; }
+
+/* Settings lock screen */
+.settings-lock {
+  text-align: center;
+  padding: 20px 0 10px;
+}
+.settings-lock-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.settings-lock-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }
+.settings-lock-sub { color: var(--text2); font-size: 0.85rem; margin-bottom: 20px; }
+
+/* Toggle switch */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-info { flex: 1; }
+.toggle-label { font-size: 0.92rem; font-weight: 500; color: var(--text); }
+.toggle-desc { font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+.toggle-switch {
+  position: relative;
+  width: 44px; height: 24px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* Password change section */
+.pw-section {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.pw-section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 28px 24px 20px;
+  margin-top: 40px;
+  position: relative;
+  z-index: 1;
+}
+.footer-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: center;
+}
+.footer-brand {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.footer-brand span { color: var(--accent); }
+.footer-tagline { font-size: 0.82rem; color: var(--text2); margin-bottom: 10px; }
+.footer-copy { font-size: 0.75rem; color: var(--text3); }
+
+.footer-chat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.messenger-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  background: linear-gradient(135deg, #0084ff, #0066cc);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0,132,255,0.35);
+  white-space: nowrap;
+}
+.messenger-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,132,255,0.5); }
+.messenger-icon {
+  width: 22px; height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  color: #0084ff;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.footer-chat-label { font-size: 0.75rem; color: var(--text3); }
+
+@media (max-width: 640px) {
+  .footer-inner { grid-template-columns: 1fr; }
+  .footer-chat { align-items: flex-start; }
+}
+
+/* ─── PUBLIC REGISTRY STATS ─── */
+.public-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.public-stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.public-stat-number {
+  font-family: var(--font-head);
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 3px;
+}
+.public-stat-label {
+  font-size: 0.72rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+/* ─── PHOTO PREVIEW ─── */
+.photo-preview {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  display: none;
+}
+.photo-preview.visible { display: block; }
+
+.form-info {
+  font-size: 0.78rem;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* ─── HELP BUTTON ─── */
+.nav-help-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+.nav-help-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); }
+
+/* ─── HELP MODAL ─── */
+.help-modal {
+  max-width: 520px;
+}
+.help-section {
+  margin-bottom: 22px;
+}
+.help-section:last-child { margin-bottom: 0; }
+.help-section-title {
+  font-family: var(--font-head);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.help-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.help-item .hi-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  margin-top: 1px;
+}
+.help-item strong { color: var(--text); }
+.help-tip {
+  background: rgba(232,64,64,0.08);
+  border: 1px solid rgba(232,64,64,0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--text2);
+  margin-top: 14px;
+  line-height: 1.6;
+}
+.help-tip strong { color: var(--accent); }
+
+/* Admin mobile menu */
+.mobile-nav-menu {
+  display: none;
+  position: sticky;
+  top: 60px;
+  left: 0; right: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 99;
+  padding: 8px 12px;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mobile-nav-menu::-webkit-scrollbar { display: none; }
+@media (max-width: 640px) {
+  .mobile-nav-menu { display: flex; flex-wrap: nowrap; } /* nowrap so it scrolls */
+  .mobile-nav-menu .nav-tab { font-size: 0.8rem; padding: 8px 10px; white-space: nowrap; flex-shrink: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="modalHelp">
+  <div class="modal help-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="helpModalTitle">❓ Help</div>
+        <div style="font-size:0.8rem;color:var(--text2);margin-top:3px;" id="helpModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modalHelp')">✕</button>
+    </div>
+    <div class="modal-body" id="helpModalBody"></div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner" style="width:40px;height:40px;border-width:3px;"></div>
+  <div class="loading-text" id="loadingText">Connecting to server...</div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="logo-icon">🔗</div>
+    Ugnayan<span>Center</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="search" onclick="showPage('search')">🔍 Search</button>
+    <button class="nav-tab" data-page="report" onclick="showPage('report')" id="navReport">📋 Report</button>
+    <button class="nav-tab" data-page="admin" onclick="showPage('admin')" id="navAdmin" style="display:none">⚙️ Admin</button>
+    <button class="nav-tab" data-page="login" onclick="showPage('login')" id="navLogin">🔐 Login</button>
+  </div>
+  <div class="nav-right">
+   <!-- <button class="nav-help-btn" id="navHelpBtn" onclick="openHelpModal()" title="Help for current tab">❓ <span class="help-text">Help</span></button> -->
+   
+    <div class="nav-user-badge" id="navUserBadge">
+      <div class="role-dot" id="roleDot"></div>
+      <span id="navUserName"></span>
+    </div>
+    <button class="btn-logout" id="btnLogout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- Mobile nav tabs -->
+<div class="mobile-nav-menu" id="mobileNavMenu">
+  <button class="nav-tab active" data-page="search" onclick="showPage('search')">🔍 Search</button>
+  <button class="nav-tab" data-page="report" onclick="showPage('report')" id="mNavReport">📋 Report</button>
+  <button class="nav-tab" data-page="admin" onclick="showPage('admin')" id="mNavAdmin" style="display:none">⚙️ Admin</button>
+  <button class="nav-tab" data-page="login" onclick="showPage('login')" id="mNavLogin">🔐 Login</button>
+  <button class="nav-help-btn" onclick="openHelpModal()" style="font-size:0.8rem;padding:8px 10px;flex-shrink:0;">❓ Help</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SEARCH
+═══════════════════════════════════════════════ -->
+<div class="page active" id="page-search">
+  <div class="hero">
+    <div class="hero-tag">
+      <span class="pulse-dot red" style="margin-right:6px;vertical-align:middle;"></span>
+      Calamity Registry System
+    </div>
+    <p>Search for victims, survivors, and evacuees here—an online registry system.</p>
+    <!-- Purpose statement -->
+    <p style="font-size:0.78rem;color:var(--text3);margin-bottom:16px;margin-top:-20px;">This registry is for locating people affected by calamities. Please use responsibly and with respect for the privacy of affected families.</p>
+    <div class="search-container">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter name to search..." onkeydown="if(event.key==='Enter')searchVictims()"/>
+        <button class="btn-search" onclick="searchVictims()">SEARCH</button>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text3);margin-top:8px;text-align:center;">Minimum 3 characters required to search</div>
+    </div>
+  </div>
+
+  <div class="results-area" id="resultsArea" style="display:none;">
+    <div class="results-header">
+      <div class="results-count" id="resultsCount"></div>
+      <button class="btn btn-secondary btn-sm" onclick="clearSearch()">✕ Clear</button>
+    </div>
+    <div id="resultsList"></div>
+  </div>
+
+  <!-- Registry Stats (replaces browsable Latest Registered feed) -->
+  <div class="results-area" id="latestArea">
+    <div class="results-header">
+      <div class="results-count"><strong>Registry Overview</strong></div>
+      <button class="btn btn-secondary btn-sm" onclick="loadLatest()">↻ Refresh</button>
+    </div>
+    <div id="latestList">
+      <div class="empty-state"><div class="icon">📡</div><h3>Loading registry data...</h3></div>
+    </div>
+    <!-- Privacy notice -->
+    
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: REPORT (Volunteer)
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-report">
+  <div class="container">
+    <div class="section-title">📋 Report a Person</div>
+    <div class="section-sub">Submit information about a calamity victim, survivor, or evacuee. Only authorized accounts can submit reports.</div>
+
+    <div id="reportLoginNote" class="config-banner">
+      ⚠️ You must be logged in as a Volunteer, Reporter, or Admin to submit reports.
+      <button class="btn btn-secondary btn-sm" onclick="showPage('login')" style="margin-left:auto;white-space:nowrap;">Login →</button>
+    </div>
+
+    <div id="reportForm" style="display:none;">
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name <span class="req">*</span></label>
+            <input class="form-input" id="r_fname" placeholder="e.g. Juan"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name <span class="req">*</span></label>
+            <input class="form-input" id="r_lname" placeholder="e.g. dela Cruz"/>
+          </div>
+        </div>
+        <div class="form-row triple">
+          <div class="form-group">
+            <label class="form-label">Age</label>
+            <input class="form-input" id="r_age" type="number" placeholder="e.g. 35" min="0" max="120"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sex</label>
+            <select class="form-select" id="r_sex">
+              <option value="">Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status <span class="req">*</span></label>
+            <select class="form-select" id="r_status">
+              <option value="">Select status</option>
+              <option>Safe</option>
+              <option>Injured</option>
+              <option>Missing</option>
+              <option>Evacuated</option>
+              <option>Hospitalized</option>
+              <option>Deceased</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Calamity Event <span class="req">*</span></label>
+            <select class="form-select" id="r_calamity">
+              <option value="">Select event</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Current Location / Evacuation Center</label>
+            <input class="form-input" id="r_location" placeholder="e.g. Brgy. San Jose Evacuation Center"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">City / Municipality</label>
+            <input class="form-input" id="r_city" placeholder="e.g. Marikina City"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Person (Relative)</label>
+            <input class="form-input" id="r_contact" placeholder="Name & phone number"/>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">Additional Notes / Medical Condition</label>
+            <textarea class="form-textarea" id="r_notes" placeholder="Any relevant information: injuries, medical needs, unaccompanied minor, etc."></textarea>
+          </div>
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">Photo URL (optional)</label>
+            <input class="form-input" id="r_photo" placeholder="https://..." oninput="previewPhoto(this)"/>
+            <span class="form-info">Paste a direct image URL. Use a photo sharing service like Imgur.</span>
+            <img id="photoPreview" class="photo-preview" alt="Preview"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-secondary" onclick="clearReportForm()">Clear Form</button>
+          <button class="btn btn-primary" onclick="submitReport()" id="btnSubmitReport">Submit Report</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ADMIN
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-admin">
+  <div class="container">
+    <div class="section-title">⚙️ Admin Dashboard</div>
+    <div class="section-sub">Manage victim records, calamity events, users, and system settings.</div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="adminStats">
+      <div class="stat-card s-total"><div class="stat-number" id="st-total">—</div><div class="stat-label">Total Records</div></div>
+      <div class="stat-card s-safe"><div class="stat-number" id="st-safe">—</div><div class="stat-label">Safe</div></div>
+      <div class="stat-card s-injured"><div class="stat-number" id="st-injured">—</div><div class="stat-label">Injured</div></div>
+      <div class="stat-card s-missing"><div class="stat-number" id="st-missing">—</div><div class="stat-label">Missing</div></div>
+      <div class="stat-card s-evacuated"><div class="stat-number" id="st-evacuated">—</div><div class="stat-label">Evacuated</div></div>
+      <div class="stat-card s-hospitalized"><div class="stat-number" id="st-hospitalized">—</div><div class="stat-label">Hospitalized</div></div>
+    </div>
+
+    <!-- Admin tabs -->
+    <div class="tab-group">
+      <button class="tab-btn active" onclick="switchTab('victims',this)">📋 Victim Records</button>
+      <button class="tab-btn" onclick="switchTab('events',this)">🌪 Calamity Events</button>
+      <button class="tab-btn" onclick="switchTab('users',this)" id="tabUsers">👤 User Accounts</button>
+      <button class="tab-btn" onclick="switchTab('settings',this)">🔧 Settings</button>
+    </div>
+
+    <!-- TAB: Victims -->
+    <div class="tab-content active" id="tab-victims">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;flex-wrap:wrap;">
+        <input class="form-input" style="max-width:260px;" id="adminSearchInput" placeholder="Filter records..." oninput="filterAdminTable()"/>
+        <div style="display:flex;gap:8px;">
+          <select class="filter-select" id="adminStatusFilter" onchange="filterAdminTable()">
+            <option value="">All Statuses</option>
+            <option>Safe</option><option>Injured</option><option>Missing</option>
+            <option>Evacuated</option><option>Hospitalized</option><option>Deceased</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="refreshAdmin()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="adminTable">
+          <thead>
+            <tr>
+              <th>Entry ID</th>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Status</th>
+              <th>Calamity</th>
+              <th>Location</th>
+              <th>Reported By</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody">
+            <tr><td colspan="9" style="text-align:center;color:var(--text2);padding:40px;">Loading records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: Events -->
+    <div class="tab-content" id="tab-events">
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-primary btn-sm" onclick="openAddEventModal()">+ Add Calamity Event</button>
+      </div>
+      <div class="table-wrap">
+        <table id="eventsTable">
+          <thead>
+            <tr><th>Event Name</th><th>Type</th><th>Area</th><th>Date</th><th>Active</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="eventsTableBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--text2);padding:40px;">Loading events...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: Users -->
+    <div class="tab-content" id="tab-users">
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Add User Account</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Username</th><th>Full Name</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5" style="text-align:center;color:var(--text2);padding:40px;">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: Settings -->
+    <div class="tab-content" id="tab-settings">
+      <div class="form-card">
+        <div class="settings-section">
+          <div class="settings-title">Google Sheets Connection</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Web App URL <span class="req">*</span></label>
+              <input class="form-input" id="cfg_url" placeholder="https://script.google.com/macros/s/.../exec"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">API Key <span class="req">*</span></label>
+              <input class="form-input" id="cfg_key" type="password" placeholder="Your secret API key"/>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-primary" onclick="saveConfig()">Save & Connect</button>
+            <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+          </div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;"/>
+        <div class="settings-section">
+          <div class="settings-title">App Information</div>
+          <p style="font-size:0.85rem;color:var(--text2);line-height:1.8;">
+            <strong style="color:var(--text);">App:</strong> UgnayanCenter Calamity Victim Registry<br>
+            <strong style="color:var(--text);">Sheets Used:</strong> Victims, CalamityEvents, Users<br>
+            <strong style="color:var(--text);">Version:</strong> 1.1.0<br>
+            <strong style="color:var(--text);">Backend:</strong> Google Apps Script Universal API
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: LOGIN
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-login">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-icon">🔐</div>
+      <div class="login-title">Sign In</div>
+      <div class="login-sub">Access reporter or admin features. Public search is always available.</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="loginUser" placeholder="Enter your username" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="loginPass" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()" id="btnLogin">Sign In</button>
+      <p style="margin-top:16px;font-size:0.78rem;color:var(--text3);text-align:center;">
+        Public search does not require login. Contact your administrator for account access.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════ -->
+
+<!-- Victim Detail Modal -->
+<div class="modal-overlay" id="modalDetail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalDetailTitle">Victim Details</div>
+      <button class="modal-close" onclick="closeModal('modalDetail')">✕</button>
+    </div>
+    <div class="modal-body" id="modalDetailBody"></div>
+  </div>
+</div>
+
+<!-- Edit Victim Modal -->
+<div class="modal-overlay" id="modalEdit">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalEditTitle">Edit Record</div>
+      <button class="modal-close" onclick="closeModal('modalEdit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit_id"/>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name <span class="req">*</span></label>
+          <input class="form-input" id="edit_fname" placeholder="e.g. Juan"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name <span class="req">*</span></label>
+          <input class="form-input" id="edit_lname" placeholder="e.g. dela Cruz"/>
+        </div>
+      </div>
+      <div class="form-row triple">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input class="form-input" id="edit_age" type="number" placeholder="e.g. 35" min="0" max="120"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sex</label>
+          <select class="form-select" id="edit_sex">
+            <option value="">Select</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status <span class="req">*</span></label>
+          <select class="form-select" id="edit_status">
+            <option value="">Select status</option>
+            <option>Safe</option><option>Injured</option><option>Missing</option>
+            <option>Evacuated</option><option>Hospitalized</option><option>Deceased</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Calamity Event <span class="req">*</span></label>
+          <select class="form-select" id="edit_calamity">
+            <option value="">Select event</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Location / Evacuation Center</label>
+          <input class="form-input" id="edit_location" placeholder="e.g. Brgy. San Jose Evacuation Center"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">City / Municipality</label>
+          <input class="form-input" id="edit_city" placeholder="e.g. Marikina City"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Person (Relative)</label>
+          <input class="form-input" id="edit_contact" placeholder="Name & phone number"/>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Additional Notes / Medical Condition</label>
+          <textarea class="form-textarea" id="edit_notes" placeholder="Any relevant information: injuries, medical needs, unaccompanied minor, etc."></textarea>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="form-group">
+          <label class="form-label">Photo URL (optional)</label>
+          <input class="form-input" id="edit_photo" placeholder="https://..." oninput="previewEditPhoto(this)"/>
+          <span class="form-info">Paste a direct image URL. Use a photo sharing service like Imgur.</span>
+          <img id="editPhotoPreview" class="photo-preview" alt="Preview"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeModal('modalEdit')">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveEdit" onclick="saveEditRecord()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Calamity Event Modal -->
+<div class="modal-overlay" id="modalEvent">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalEventTitle">Add Calamity Event</div>
+      <button class="modal-close" onclick="closeModal('modalEvent')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ev_id"/>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Event Name <span class="req">*</span></label>
+          <input class="form-input" id="ev_name" placeholder="e.g. Typhoon Carina 2024"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Calamity Type</label>
+          <select class="form-select" id="ev_type">
+            <option>Typhoon</option><option>Flood</option><option>Earthquake</option>
+            <option>Landslide</option><option>Volcanic Eruption</option><option>Fire</option>
+            <option>Tsunami</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Affected Area</label>
+          <input class="form-input" id="ev_area" placeholder="e.g. Metro Manila, Rizal, Laguna"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input class="form-input" id="ev_date" type="date"/>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="ev_active">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeModal('modalEvent')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay" id="modalUser">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalUserTitle">Add User Account</div>
+      <button class="modal-close" onclick="closeModal('modalUser')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usr_id"/>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="req">*</span></label>
+          <input class="form-input" id="usr_name" placeholder="Full name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username <span class="req">*</span></label>
+          <input class="form-input" id="usr_username" placeholder="Username (no spaces)"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password <span class="req">*</span></label>
+          <input class="form-input" id="usr_password" type="password" placeholder="Set a password"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select" id="usr_role">
+            <option value="Volunteer">Volunteer</option>
+            <option value="Reporter">Reporter</option>
+            <option value="Staff">Evacuation Staff</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="usr_status">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeModal('modalUser')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveUser()">Save Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     SETTINGS PANEL
+═══════════════════════════════════════════════ -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <div class="settings-panel-header">
+      <div class="settings-panel-title">🔧 App Settings</div>
+      <button class="modal-close" onclick="closeSettingsPanel()">✕</button>
+    </div>
+    <div class="settings-panel-body">
+
+      <!-- LOCK SCREEN -->
+      <div id="settingsLock">
+        <div class="settings-lock">
+          <div class="settings-lock-icon">🔐</div>
+          <div class="settings-lock-title">Settings Protected</div>
+          <div class="settings-lock-sub">Enter the settings password to continue.</div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label">Settings Password</label>
+          <input class="form-input" id="settingsPassInput" type="password" placeholder="Enter password..." onkeydown="if(event.key==='Enter')unlockSettings()"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="unlockSettings()">Unlock Settings</button>
+      </div>
+
+      <!-- SETTINGS CONTENT (shown after unlock) -->
+      <div id="settingsContent" style="display:none;">
+
+        <!-- APPEARANCE -->
+        <div class="pw-section" style="margin-bottom:16px;">
+          <div class="pw-section-title">🎨 Appearance</div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Light Theme</div>
+              <div class="toggle-desc">Switch between dark and light mode</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="themeToggle" onchange="toggleTheme(this)"/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Compact View</div>
+              <div class="toggle-desc">Show more records per page</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="compactToggle" onchange="toggleCompact(this)"/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <div class="toggle-label">Show Status Icons</div>
+              <div class="toggle-desc">Display emoji icons next to status badges</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="iconToggle" checked onchange="toggleIcons(this)"/>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- MESSENGER LINK -->
+        <div class="pw-section" style="margin-bottom:16px;">
+          <div class="pw-section-title">💬 Community Chat Link</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Facebook Messenger / Group Link</label>
+            <input class="form-input" id="cfg_messenger" placeholder="https://m.me/... or https://www.facebook.com/groups/..."/>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Chat Button Label</label>
+            <input class="form-input" id="cfg_chat_label" placeholder="e.g. Join Relief Chat Group"/>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="saveMessengerLink()">Save Link</button>
+        </div>
+
+        <!-- PASSWORD MANAGEMENT -->
+        <div class="pw-section" style="margin-bottom:16px;">
+          <div class="pw-section-title">🔑 Change Settings Password</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Current Password</label>
+            <input class="form-input" id="pw_current" type="password" placeholder="Current settings password"/>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">New Password</label>
+            <input class="form-input" id="pw_new" type="password" placeholder="New password (min 6 chars)"/>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">Confirm New Password</label>
+            <input class="form-input" id="pw_confirm" type="password" placeholder="Repeat new password"/>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="changeSettingsPassword()">Update Password</button>
+        </div>
+
+        <!-- GS CONNECTION (mirror of admin settings) -->
+        <div class="pw-section" style="margin-bottom:16px;">
+          <div class="pw-section-title">☁️ Google Sheets Connection</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Web App URL</label>
+            <input class="form-input" id="fab_cfg_url" placeholder="https://script.google.com/macros/s/.../exec"/>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label">API Key</label>
+            <input class="form-input" id="fab_cfg_key" type="password" placeholder="Your secret API key"/>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="saveFabConfig()">Save & Connect</button>
+            <button class="btn btn-secondary btn-sm" onclick="testFabConnection()">Test Connection</button>
+          </div>
+        </div>
+
+        <!-- APP INFO -->
+        <div class="pw-section">
+          <div class="pw-section-title">ℹ️ App Information</div>
+          <p style="font-size:0.82rem;color:var(--text2);line-height:1.9;">
+            <strong style="color:var(--text);">App:</strong> UgnayanCenter Calamity Victim Registry<br>
+            <strong style="color:var(--text);">Version:</strong> 1.1.0<br>
+            <strong style="color:var(--text);">Sheets:</strong> Victims · CalamityEvents · Users<br>
+            <strong style="color:var(--text);">Backend:</strong> Google Apps Script Universal API<br>
+            <strong style="color:var(--text);">Tagline:</strong> Reconnecting families in times of crisis
+          </p>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn btn-danger btn-sm" onclick="clearAllLocalData()">🗑 Clear Local Data</button>
+            <button class="btn btn-secondary btn-sm" onclick="lockSettings()">🔒 Lock Settings</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Ugnayan<span>Center</span></div>
+      <div class="footer-tagline">Reconnecting families in times of calamities</div>
+      <div class="footer-copy">© 2025 UgnayanCenter. For emergency use. All victim data is handled with care and confidentiality.</div>
+    </div>
+    <div class="footer-chat">
+      <a id="messengerFooterBtn" href="#" target="_blank" class="messenger-btn" onclick="handleMessengerClick(event)">
+        <div class="messenger-icon">m</div>
+        <span id="messengerBtnLabel">Join Community Chat</span>
+      </a>
+      <div class="footer-chat-label">Community support via Facebook Messenger</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════
+const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbwq97UIYm2iATr3pvqcAM7uGDNYTA_sv8fIlVqWX68bevgN1uz9PK-aa02Au38O7dB-xA/exec';
+const DEFAULT_GS_KEY = 'gsa_8Fh3Kp92LmQx7VfueRex';
+
+// Seed localStorage with defaults if not yet set
+if (!localStorage.getItem('st_url')) localStorage.setItem('st_url', DEFAULT_GS_URL);
+if (!localStorage.getItem('st_key')) localStorage.setItem('st_key', DEFAULT_GS_KEY);
+
+let CONFIG = {
+  url: localStorage.getItem('st_url') || DEFAULT_GS_URL,
+  key: localStorage.getItem('st_key') || DEFAULT_GS_KEY
+};
+let currentUser = null;
+let allVictims  = [];
+let allEvents   = [];
+let allUsers    = [];
+
+const SHEETS = { VICTIMS: 'Victims', EVENTS: 'CalamityEvents', USERS: 'Users' };
+
+// Auto-assign IDs to rows that came from the sheet with an empty column A.
+// Handles legacy/manually-entered data. The generated ID gets written back
+// to the sheet on the next save of that row via the existing 'save' action.
+function ensureIds(arr, prefix) {
+  let counter = Date.now();
+  arr.forEach(row => {
+    if (!row.id) row.id = prefix + '-' + (counter++) + '-' + Math.random().toString(36).slice(2, 6);
+  });
+  return arr;
+}
+
+// Settings password stored in localStorage (plain text as requested)
+const DEFAULT_SETTINGS_PASS = '12345678';
+let settingsUnlocked = false;
+
+// ═══════════════════════════════════════════════
+// API LAYER
+// ═══════════════════════════════════════════════
+async function api(params) {
+  if (!CONFIG.url || !CONFIG.key) throw new Error('Not configured. Go to Settings to set up Google Sheets connection.');
+  const body = { apiKey: CONFIG.key, ...params };
+
+  // AbortController for timeout — important on slow mobile connections
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
+  try {
+    const res = await fetch(CONFIG.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // 'text/plain' avoids CORS preflight on Apps Script
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`Network error: ${res.status} ${res.statusText}`);
+    const json = await res.json();
+    if (json.status !== 'success') throw new Error(json.message || 'API error');
+    return json.data;
+  } catch(e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') throw new Error('Request timed out. Check your connection and try again.');
+    throw e;
+  }
+}
+
+async function apiGet(sheet, action, extra={}) {
+  return api({ sheet, action, ...extra });
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function toast(msg, type='info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icon = document.createElement('span');
+  icon.className = 't-icon';
+  icon.textContent = icons[type] || 'ℹ️';
+  const text = document.createElement('span');
+  text.textContent = msg;
+  el.appendChild(icon);
+  el.appendChild(text);
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity 0.4s'; setTimeout(()=>el.remove(),400); }, 3500);
+}
+
+// ═══════════════════════════════════════════════
+// LOADING
+// ═══════════════════════════════════════════════
+function showLoading(txt='Loading...') {
+  document.getElementById('loadingText').textContent = txt;
+  document.getElementById('loadingOverlay').classList.add('active');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+let currentPage = 'search';
+
+function showPage(id) {
+  currentPage = id;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + id);
+  if (target) target.classList.add('active');
+
+  // Sync nav-tab active state — use data-page attribute for reliable matching
+  document.querySelectorAll('.nav-tab[data-page]').forEach(t => {
+    t.classList.toggle('active', t.dataset.page === id);
+  });
+
+  // Scroll to top on page change (mobile UX)
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (id === 'search') loadLatest();
+  if (id === 'report') initReportPage();
+  if (id === 'admin') initAdmin();
+  if (id === 'login') {
+    const lu = document.getElementById('loginUser');
+    const lp = document.getElementById('loginPass');
+    if (lu) lu.value = '';
+    if (lp) lp.value = '';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// HELP MODAL
+// ═══════════════════════════════════════════════
+const HELP_CONTENT = {
+  search: {
+    title: '🔍 Search Help',
+    sub: 'How to find people in the registry',
+    body: `
+      <div class="help-section">
+        <div class="help-section-title">🔎 How to Search</div>
+        <div class="help-item"><div class="hi-icon">1</div><div><strong>Type a name</strong> in the search box — at least <strong>3 characters</strong> are required before the system will return results.</div></div>
+        <div class="help-item"><div class="hi-icon">2</div><div>Press <strong>Enter</strong> or click the <strong>SEARCH</strong> button to run the query.</div></div>
+        <div class="help-item"><div class="hi-icon">3</div><div>Click any result card to <strong>view full details</strong> of the person's record.</div></div>
+        <div class="help-item"><div class="hi-icon">✕</div><div>Click <strong>Clear</strong> to reset results and return to the registry overview.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">🏷️ Status Guide</div>
+        <div class="help-item"><div class="hi-icon">✅</div><div><strong>Safe</strong> — Person has been confirmed safe.</div></div>
+        <div class="help-item"><div class="hi-icon">🤕</div><div><strong>Injured</strong> — Person sustained injuries and is receiving care.</div></div>
+        <div class="help-item"><div class="hi-icon">❓</div><div><strong>Missing</strong> — Person's whereabouts are currently unknown.</div></div>
+        <div class="help-item"><div class="hi-icon">🏕</div><div><strong>Evacuated</strong> — Person is in an evacuation center.</div></div>
+        <div class="help-item"><div class="hi-icon">🏥</div><div><strong>Hospitalized</strong> — Person is admitted in a hospital.</div></div>
+        <div class="help-item"><div class="hi-icon">🕊</div><div><strong>Deceased</strong> — Person has been confirmed deceased.</div></div>
+      </div>
+      <div class="help-tip">💡 <strong>Privacy Notice:</strong> This registry is for locating people affected by calamities. Sensitive details are only visible to logged-in authorized users. Please use this system responsibly.</div>
+    `
+  },
+  report: {
+    title: '📋 Report Help',
+    sub: 'How to submit a victim or survivor report',
+    body: `
+      <div class="help-section">
+        <div class="help-section-title">📝 Submitting a Report</div>
+        <div class="help-item"><div class="hi-icon">🔐</div><div>You must be <strong>logged in</strong> as a Volunteer, Reporter, or Admin to submit reports. Use the Login tab to sign in first.</div></div>
+        <div class="help-item"><div class="hi-icon">1</div><div>Fill in the person's <strong>First Name</strong> and <strong>Last Name</strong> — these are required.</div></div>
+        <div class="help-item"><div class="hi-icon">2</div><div>Select the correct <strong>Status</strong> (Safe, Injured, Missing, etc.) and the associated <strong>Calamity Event</strong>.</div></div>
+        <div class="help-item"><div class="hi-icon">3</div><div>Enter the person's <strong>location</strong> details — barangay, city/municipality, and province.</div></div>
+        <div class="help-item"><div class="hi-icon">4</div><div>Add any relevant <strong>contact number</strong>, <strong>notes</strong>, or a <strong>photo URL</strong> to help identification.</div></div>
+        <div class="help-item"><div class="hi-icon">✔</div><div>Click <strong>Submit Report</strong> when done. A confirmation will appear on success.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">⚠️ Important Guidelines</div>
+        <div class="help-item"><div class="hi-icon">!</div><div>Only submit reports for people <strong>directly affected</strong> by a declared calamity event.</div></div>
+        <div class="help-item"><div class="hi-icon">!</div><div>Double-check the <strong>spelling of names</strong> to avoid duplicate records.</div></div>
+        <div class="help-item"><div class="hi-icon">!</div><div>Do not submit <strong>unverified</strong> or <strong>rumored</strong> status updates.</div></div>
+      </div>
+      <div class="help-tip">💡 <strong>Tip:</strong> If a person already has a record and their status changed, ask an Admin to update the existing entry instead of creating a duplicate.</div>
+    `
+  },
+  admin: {
+    title: '⚙️ Admin Help',
+    sub: 'Managing records, events, and user accounts',
+    body: `
+      <div class="help-section">
+        <div class="help-section-title">👤 Victims Tab</div>
+        <div class="help-item"><div class="hi-icon">+</div><div>Click the <strong>✏️ edit</strong> button on any row to update a victim's details, including calamity event, contact, notes, and photo.</div></div>
+        <div class="help-item"><div class="hi-icon">✏️</div><div>Click the <strong>edit icon</strong> on any row to modify a victim's details or update their status.</div></div>
+        <div class="help-item"><div class="hi-icon">🗑</div><div>Click the <strong>delete icon</strong> to permanently remove a record. This action cannot be undone.</div></div>
+        <div class="help-item"><div class="hi-icon">🔍</div><div>Use the <strong>search bar</strong> to quickly filter records by name.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">🌪️ Events Tab</div>
+        <div class="help-item"><div class="hi-icon">+</div><div>Add a new <strong>Calamity Event</strong> (e.g. Typhoon Carina 2024) so reporters can link victims to it.</div></div>
+        <div class="help-item"><div class="hi-icon">!</div><div>Deleting an event that has <strong>linked victim records</strong> will leave those records without a valid event — a warning will appear before deletion.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">👥 Users Tab <span style="font-size:0.72rem;color:var(--text3);font-weight:400;">(Admin only)</span></div>
+        <div class="help-item"><div class="hi-icon">+</div><div>Create user accounts with roles: <strong>Admin</strong>, <strong>Reporter</strong>, <strong>Volunteer</strong>, or <strong>Staff</strong>.</div></div>
+        <div class="help-item"><div class="hi-icon">✏️</div><div>Edit accounts to update names, passwords, roles, or set a user to <strong>Inactive</strong> to revoke access.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">⚙️ Settings Tab</div>
+        <div class="help-item"><div class="hi-icon">🔗</div><div>Enter the <strong>Google Sheets URL</strong> and <strong>API Key</strong> to connect the app to your backend. Click <strong>Test Connection</strong> to verify.</div></div>
+        <div class="help-item"><div class="hi-icon">💬</div><div>Set the <strong>Community Chat Link</strong> (e.g. Facebook Messenger group) shown in the footer.</div></div>
+      </div>
+      <div class="help-tip">💡 <strong>Roles:</strong> Only <strong>Admins</strong> can manage user accounts. Reporters and Volunteers can submit reports but cannot access the Admin panel.</div>
+    `
+  },
+  login: {
+    title: '🔐 Login Help',
+    sub: 'Signing in to your account',
+    body: `
+      <div class="help-section">
+        <div class="help-section-title">🔑 How to Sign In</div>
+        <div class="help-item"><div class="hi-icon">1</div><div>Enter your assigned <strong>Username</strong> and <strong>Password</strong> in the fields provided.</div></div>
+        <div class="help-item"><div class="hi-icon">2</div><div>Click <strong>Sign In</strong> or press <strong>Enter</strong> to authenticate.</div></div>
+        <div class="help-item"><div class="hi-icon">3</div><div>On success, you'll be redirected to the Search page and your role badge will appear in the top navigation.</div></div>
+        <div class="help-item"><div class="hi-icon">↩</div><div>To sign out, click the <strong>Sign Out</strong> button in the top-right corner of the navigation bar.</div></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">👥 Account Roles</div>
+        <div class="help-item"><div class="hi-icon" style="color:var(--accent);">●</div><div><strong>Admin</strong> — Full access: manage victims, events, users, and settings.</div></div>
+        <div class="help-item"><div class="hi-icon" style="color:var(--injured);">●</div><div><strong>Reporter</strong> — Can submit and view reports.</div></div>
+        <div class="help-item"><div class="hi-icon" style="color:var(--safe);">●</div><div><strong>Volunteer</strong> — Can submit reports in the field.</div></div>
+        <div class="help-item"><div class="hi-icon" style="color:var(--evacuated);">●</div><div><strong>Staff</strong> — Read and report access.</div></div>
+      </div>
+      <div class="help-tip">💡 <strong>No account?</strong> Contact your system administrator to create an account for you. Accounts cannot be self-registered for security reasons.</div>
+    `
+  }
+};
+
+function openHelpModal() {
+  const page = currentPage || 'search';
+  const content = HELP_CONTENT[page] || HELP_CONTENT.search;
+  document.getElementById('helpModalTitle').textContent = content.title;
+  document.getElementById('helpModalSub').textContent = content.sub;
+  document.getElementById('helpModalBody').innerHTML = content.body;
+  openModal('modalHelp');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'events') loadEventsTab();
+  if (name === 'users') loadUsersTab();
+}
+
+// ═══════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// NOTE: backdrop click listeners are attached in DOMContentLoaded below
+
+// ═══════════════════════════════════════════════
+// STATUS HELPERS
+// ═══════════════════════════════════════════════
+const statusIcons = { Safe:'✅', Injured:'🤕', Missing:'❓', Evacuated:'🏕', Hospitalized:'🏥', Deceased:'🕊' };
+function statusBadge(s) {
+  const cls = (s||'').toLowerCase().replace(/ /g,'-');
+  const showIcons = localStorage.getItem('uc_showIcons') !== 'false';
+  const icon = showIcons ? (statusIcons[s] || '•') : '';
+  return `<span class="status-badge ${cls}">${icon ? icon+' ' : ''}${s||'Unknown'}</span>`;
+}
+
+function roleColor(r) {
+  const map = { Admin:'#e84040', Reporter:'#f59e0b', Volunteer:'#22c55e', Staff:'#3b82f6' };
+  return map[r] || '#8899aa';
+}
+
+// ═══════════════════════════════════════════════
+// MESSENGER / COMMUNITY CHAT
+// ═══════════════════════════════════════════════
+function openMessenger() {
+  const link = localStorage.getItem('uc_messenger_link') || '';
+  if (!link) {
+    toast('No community chat link configured yet. Ask your admin to set it in Settings → Community Chat Link.', 'info');
+    return;
+  }
+  window.open(link, '_blank');
+}
+
+function handleMessengerClick(e) {
+  const link = localStorage.getItem('uc_messenger_link') || '';
+  if (!link) {
+    e.preventDefault();
+    toast('Community chat link not set. Configure it in App Settings.', 'info');
+    return;
+  }
+  document.getElementById('messengerFooterBtn').href = link;
+}
+
+function updateMessengerFooter() {
+  const link  = localStorage.getItem('uc_messenger_link') || '';
+  const label = localStorage.getItem('uc_messenger_label') || 'Join Community Chat';
+  document.getElementById('messengerBtnLabel').textContent = label;
+  if (link) document.getElementById('messengerFooterBtn').href = link;
+}
+
+// ═══════════════════════════════════════════════
+// SETTINGS PANEL
+// ═══════════════════════════════════════════════
+function openSettingsPanel() {
+  settingsUnlocked = false;
+  document.getElementById('settingsLock').style.display = 'block';
+  document.getElementById('settingsContent').style.display = 'none';
+  document.getElementById('settingsPassInput').value = '';
+  // Pre-fill GS fields
+  document.getElementById('fab_cfg_url').value = CONFIG.url;
+  document.getElementById('fab_cfg_key').value = CONFIG.key;
+  // Pre-fill messenger
+  document.getElementById('cfg_messenger').value = localStorage.getItem('uc_messenger_link') || '';
+  document.getElementById('cfg_chat_label').value = localStorage.getItem('uc_messenger_label') || '';
+  // Sync toggles
+  document.getElementById('themeToggle').checked = document.body.classList.contains('light-theme');
+  document.getElementById('compactToggle').checked = localStorage.getItem('uc_compact') === 'true';
+  document.getElementById('iconToggle').checked = localStorage.getItem('uc_showIcons') !== 'false';
+  document.getElementById('settingsOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('settingsPassInput').focus(), 200);
+}
+
+function closeSettingsPanel() {
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+// NOTE: settingsOverlay backdrop click attached in DOMContentLoaded below
+
+function unlockSettings() {
+  const entered = document.getElementById('settingsPassInput').value;
+  const stored  = localStorage.getItem('uc_settings_pass') || DEFAULT_SETTINGS_PASS;
+  if (entered === stored) {
+    settingsUnlocked = true;
+    document.getElementById('settingsLock').style.display = 'none';
+    document.getElementById('settingsContent').style.display = 'block';
+    toast('Settings unlocked ✓', 'success');
+  } else {
+    toast('Incorrect settings password.', 'error');
+    document.getElementById('settingsPassInput').value = '';
+    document.getElementById('settingsPassInput').focus();
+  }
+}
+
+function lockSettings() {
+  settingsUnlocked = false;
+  document.getElementById('settingsLock').style.display = 'block';
+  document.getElementById('settingsContent').style.display = 'none';
+  document.getElementById('settingsPassInput').value = '';
+}
+
+function changeSettingsPassword() {
+  const current  = document.getElementById('pw_current').value;
+  const newPw    = document.getElementById('pw_new').value;
+  const confirm  = document.getElementById('pw_confirm').value;
+  const stored   = localStorage.getItem('uc_settings_pass') || DEFAULT_SETTINGS_PASS;
+  if (current !== stored)    { toast('Current password is incorrect.', 'error'); return; }
+  if (newPw.length < 6)      { toast('New password must be at least 6 characters.', 'error'); return; }
+  if (newPw !== confirm)     { toast('Passwords do not match.', 'error'); return; }
+  localStorage.setItem('uc_settings_pass', newPw);
+  document.getElementById('pw_current').value = '';
+  document.getElementById('pw_new').value = '';
+  document.getElementById('pw_confirm').value = '';
+  toast('Settings password updated!', 'success');
+}
+
+function saveMessengerLink() {
+  const link  = document.getElementById('cfg_messenger').value.trim();
+  const label = document.getElementById('cfg_chat_label').value.trim() || 'Join Community Chat';
+  localStorage.setItem('uc_messenger_link', link);
+  localStorage.setItem('uc_messenger_label', label);
+  updateMessengerFooter();
+  toast('Messenger link saved!', 'success');
+}
+
+function saveFabConfig() {
+  const url = document.getElementById('fab_cfg_url').value.trim();
+  const key = document.getElementById('fab_cfg_key').value.trim();
+  if (!url || !key) { toast('Both URL and API Key are required.', 'error'); return; }
+  CONFIG = { url, key };
+  localStorage.setItem('st_url', url);
+  localStorage.setItem('st_key', key);
+  // Sync to admin settings fields if they exist
+  const au = document.getElementById('cfg_url');
+  const ak = document.getElementById('cfg_key');
+  if (au) au.value = url;
+  if (ak) ak.value = key;
+  toast('Configuration saved & connected!', 'success');
+}
+
+async function testFabConnection() {
+  showLoading('Testing...');
+  try {
+    const url = document.getElementById('fab_cfg_url').value.trim();
+    const key = document.getElementById('fab_cfg_key').value.trim();
+    if (!url || !key) throw new Error('Enter URL and API Key first.');
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+    const res  = await fetch(url, {
+      method:'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ apiKey: key, action: 'ping' }),
+      signal: controller.signal
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+    if (json.status === 'success') toast(`✅ Connected! Server time: ${json.data?.time||'OK'}`, 'success');
+    else throw new Error(json.message);
+  } catch(e) { toast('Connection failed: ' + (e.name === 'AbortError' ? 'Timed out' : e.message), 'error'); }
+  hideLoading();
+}
+
+function clearAllLocalData() {
+  if (!confirm('This will clear all locally stored settings, session, and config. Continue?')) return;
+  localStorage.clear();
+  toast('Local data cleared. Please reload.', 'info');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ═══════════════════════════════════════════════
+// THEME & UI TOGGLES
+// ═══════════════════════════════════════════════
+function toggleTheme(cb) {
+  document.body.classList.toggle('light-theme', cb.checked);
+  localStorage.setItem('uc_theme', cb.checked ? 'light' : 'dark');
+}
+
+function toggleCompact(cb) {
+  document.body.classList.toggle('compact-mode', cb.checked);
+  localStorage.setItem('uc_compact', cb.checked ? 'true' : 'false');
+}
+
+function toggleIcons(cb) {
+  localStorage.setItem('uc_showIcons', cb.checked ? 'true' : 'false');
+}
+
+function applyStoredTheme() {
+  if (localStorage.getItem('uc_theme') === 'light') {
+    document.body.classList.add('light-theme');
+  }
+  if (localStorage.getItem('uc_compact') === 'true') {
+    document.body.classList.add('compact-mode');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// DATE / TIME HELPERS
+// ═══════════════════════════════════════════════
+function formatDateTime(date) {
+  const d = date || new Date();
+  const year  = d.getFullYear();
+  const month = d.toLocaleString('en-US', { month: 'short' }); // "Mar"
+  const day   = String(d.getDate()).padStart(2, '0');           // "18"
+  let   hours = d.getHours();
+  const mins  = String(d.getMinutes()).padStart(2, '0');
+  const ampm  = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `${year} ${month} ${day}, ${hours}:${mins} ${ampm}`;  // "2026 Mar 18, 1:30 PM"
+}
+
+function formatDate(date) {
+  const d = date || new Date();
+  const year  = d.getFullYear();
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const day   = String(d.getDate()).padStart(2, '0');
+  return `${year} ${month} ${day}`;  // "2026 Mar 18"
+}
+
+
+async function loadLatest() {
+  const box = document.getElementById('latestList');
+  box.innerHTML = '<div class="empty-state"><div class="icon">📡</div><h3>Connecting...</h3></div>';
+  if (!CONFIG.url || !CONFIG.key) {
+    box.innerHTML = '<div class="config-banner">⚠️ App is not connected to Google Sheets. Click the 🔧 button (bottom right) to configure the connection.</div>';
+    return;
+  }
+  try {
+    const data = await apiGet(SHEETS.VICTIMS, 'getAll');
+    allVictims = ensureIds(data || [], 'V');
+    // Load events for filter population
+    try {
+      const evData = await apiGet(SHEETS.EVENTS, 'getAll');
+      allEvents = ensureIds(evData || [], 'EV');
+    } catch(e) { /* silent */ }
+    populateFilters();
+    // Build aggregate stats — no names, no browsable list
+    const counts = { Safe:0, Injured:0, Missing:0, Evacuated:0, Hospitalized:0, Deceased:0 };
+    allVictims.forEach(v => { if (counts[v.status] !== undefined) counts[v.status]++; });
+    const total = allVictims.length;
+    const activeEvents = [...new Set(allVictims.map(v=>v.calamity).filter(Boolean))].length;
+    if (!total) {
+      box.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h3>No records yet</h3><p>No victims have been registered yet.</p></div>';
+      return;
+    }
+    box.innerHTML = `
+      <div class="public-stats-grid">
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--text);">${total}</div>
+          <div class="public-stat-label">Total Records</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--safe);">${counts.Safe}</div>
+          <div class="public-stat-label">✅ Safe</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--injured);">${counts.Injured}</div>
+          <div class="public-stat-label">🤕 Injured</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--missing);">${counts.Missing}</div>
+          <div class="public-stat-label">❓ Missing</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--evacuated);">${counts.Evacuated}</div>
+          <div class="public-stat-label">🏕 Evacuated</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--hospitalized);">${counts.Hospitalized}</div>
+          <div class="public-stat-label">🏥 Hospitalized</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--deceased);">${counts.Deceased}</div>
+          <div class="public-stat-label">🕊 Deceased</div>
+        </div>
+        <div class="public-stat-card">
+          <div class="public-stat-number" style="color:var(--accent2);">${activeEvents}</div>
+          <div class="public-stat-label">🌪 Events</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    box.innerHTML = `<div class="config-banner">❌ Could not load data: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function victimCardHTML(v) {
+  const name   = `${v.firstName||''} ${v.lastName||''}`.trim() || '(Unknown)';
+  const avatar = v.photo ? `<img src="${escHtml(v.photo)}" onerror="this.style.display='none'"/>` : (v.sex==='Female' ? '👩' : '👨');
+  return `<div class="victim-card" onclick="showVictimDetail('${escHtml(v.id)}')">
+    <div class="victim-avatar">${avatar}</div>
+    <div class="victim-info">
+      <div class="victim-name">${escHtml(name)}</div>
+      <div class="victim-meta">
+        ${v.age ? `<span>🎂 ${escHtml(v.age)} yrs</span>` : ''}
+        ${v.sex ? `<span>${v.sex==='Male'?'♂':'♀'} ${escHtml(v.sex)}</span>` : ''}
+        ${v.calamity ? `<span><span class="calamity-badge">${escHtml(v.calamity)}</span></span>` : ''}
+        ${v.city ? `<span>📍 ${escHtml(v.city)}</span>` : ''}
+      </div>
+      <div class="mobile-status">${statusBadge(v.status)}</div>
+    </div>
+    <div class="victim-status-col">
+      ${statusBadge(v.status)}
+      ${v.location ? `<span class="victim-location-tag">📍 ${escHtml(v.location)}</span>` : ''}
+    </div>
+  </div>`;
+}
+
+async function searchVictims() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  if (!q) { toast('Please enter a name to search.','info'); return; }
+  if (q.length < 3) { toast('Please enter at least 3 characters to search.','info'); return; }
+
+  if (!allVictims.length) {
+    showLoading('Searching...');
+    try { allVictims = ensureIds((await apiGet(SHEETS.VICTIMS,'getAll')) || [], 'V'); } catch(e) { toast(e.message,'error'); hideLoading(); return; }
+    hideLoading();
+  }
+
+  let results = allVictims.filter(v => {
+    const name = `${v.firstName||''} ${v.lastName||''}`.trim().toLowerCase();
+    return name.includes(q);
+  });
+
+  document.getElementById('resultsArea').style.display = 'block';
+  document.getElementById('latestArea').style.display  = 'none';
+  document.getElementById('resultsCount').innerHTML    = `Found <strong>${results.length}</strong> result${results.length!==1?'s':''} for "<strong>${escHtml(q)}</strong>"`;
+  document.getElementById('resultsList').innerHTML     = results.length
+    ? results.map(v => victimCardHTML(v)).join('')
+    : '<div class="empty-state"><div class="icon">🔍</div><h3>No matches found</h3><p>Try a different name or spelling.</p></div>';
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('resultsArea').style.display = 'none';
+  document.getElementById('latestArea').style.display  = 'block';
+}
+
+function populateFilters() {
+  // Populate the calamity dropdown on the Report form only
+  const cals = [...new Set(allVictims.map(v=>v.calamity).filter(Boolean))];
+  const el = document.getElementById('r_calamity');
+  if (!el) return;
+  const cur = el.value;
+  Array.from(el.options).filter(o=>o.value!=='').forEach(o=>o.remove());
+  cals.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; el.appendChild(o); });
+  el.value = cur;
+}
+
+function showVictimDetail(id) {
+  const v = allVictims.find(x => String(x.id) === String(id));
+  if (!v) return;
+  const name = `${v.firstName||''} ${v.lastName||''}`.trim() || '(Unknown)';
+  document.getElementById('modalDetailTitle').textContent = name;
+  const avatar = v.photo ? `<img src="${escHtml(v.photo)}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--border);margin-bottom:16px;" onerror="this.style.display='none'"/>` : '';
+  const isLoggedIn = !!currentUser;
+  const sensitiveNote = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:10px 14px;font-size:0.8rem;color:var(--text2);margin-top:4px;">🔒 Contact details and notes are only visible to authorized personnel. <span style="color:var(--evacuated);cursor:pointer;font-weight:600;" onclick="closeModal('modalDetail');showPage('login');">Sign in →</span></div>`;
+  document.getElementById('modalDetailBody').innerHTML = `
+    ${avatar}
+    ${statusBadge(v.status)}
+    <div class="detail-grid" style="margin-top:16px;">
+      <div class="detail-item"><label>Full Name</label><p>${escHtml(name)}</p></div>
+      <div class="detail-item"><label>Age / Sex</label><p>${escHtml(v.age)||'—'} / ${escHtml(v.sex)||'—'}</p></div>
+      <div class="detail-item"><label>Calamity Event</label><p>${v.calamity ? `<span class="calamity-badge">${escHtml(v.calamity)}</span>` : '—'}</p></div>
+      <div class="detail-item"><label>City / Municipality</label><p>${escHtml(v.city)||'—'}</p></div>
+      ${isLoggedIn ? `
+      <div class="detail-item"><label>Current Location</label><p>${escHtml(v.location)||'—'}</p></div>
+      <div class="detail-item"><label>Contact Person</label><p>${escHtml(v.contact)||'—'}</p></div>
+      <div class="detail-item"><label>Reported By</label><p>${escHtml(v.reportedBy)||'—'}</p></div>
+      <div class="detail-item"><label>Date Reported</label><p>${escHtml(v.dateReported)||'—'}</p></div>
+      ` : `
+      <div class="detail-item"><label>Current Location</label><p style="color:var(--text3);font-style:italic;">Login required</p></div>
+      <div class="detail-item"><label>Contact Person</label><p style="color:var(--text3);font-style:italic;">Login required</p></div>
+      `}
+    </div>
+    ${isLoggedIn
+      ? (v.notes ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;font-size:0.88rem;color:var(--text2);">📝 ${escHtml(v.notes)}</div>` : '')
+      : sensitiveNote
+    }
+    <p style="font-size:0.75rem;color:var(--text3);margin-top:16px;text-align:center;">Record ID: ${escHtml(v.id)}</p>
+  `;
+  openModal('modalDetail');
+}
+
+// ═══════════════════════════════════════════════
+// REPORT PAGE
+// ═══════════════════════════════════════════════
+function initReportPage() {
+  const loggedIn = !!currentUser;
+  document.getElementById('reportLoginNote').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('reportForm').style.display      = loggedIn ? 'block' : 'none';
+  if (loggedIn) loadCalamityOptions();
+}
+
+async function loadCalamityOptions() {
+  try {
+    const data  = await apiGet(SHEETS.EVENTS,'getAll');
+    allEvents   = ensureIds((data||[]).filter(e => e.status === 'Active'), 'EV');
+    const sel   = document.getElementById('r_calamity');
+    Array.from(sel.options).filter(o=>o.value!=='').forEach(o=>o.remove());
+    allEvents.forEach(e => {
+      const o = document.createElement('option');
+      o.value = e.name; o.textContent = e.name;
+      sel.appendChild(o);
+    });
+  } catch(e) { /* silent */ }
+}
+
+function previewPhoto(input) {
+  const prev = document.getElementById('photoPreview');
+  if (input.value) { prev.src = input.value; prev.classList.add('visible'); }
+  else prev.classList.remove('visible');
+}
+
+function clearReportForm() {
+  ['r_fname','r_lname','r_age','r_location','r_city','r_contact','r_notes','r_photo'].forEach(id => document.getElementById(id).value='');
+  ['r_sex','r_status','r_calamity'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('photoPreview').classList.remove('visible');
+}
+
+async function submitReport() {
+  const fname    = document.getElementById('r_fname').value.trim();
+  const lname    = document.getElementById('r_lname').value.trim();
+  const status   = document.getElementById('r_status').value;
+  const calamity = document.getElementById('r_calamity').value;
+  const ageVal   = document.getElementById('r_age').value.trim();
+  if (!fname || !lname) { toast('First and Last name are required.','error'); return; }
+  if (!status)           { toast('Please select a status.','error'); return; }
+  if (!calamity)         { toast('Please select a calamity event.','error'); return; }
+  if (ageVal && (isNaN(ageVal) || Number(ageVal) < 0 || Number(ageVal) > 120)) {
+    toast('Please enter a valid age (0–120).','error'); return;
+  }
+
+  const btn       = document.getElementById('btnSubmitReport');
+  btn.disabled    = true; btn.textContent = 'Submitting...';
+  try {
+    const id     = 'V-' + Date.now();
+    const record = {
+      id, firstName: fname, lastName: lname,
+      age:       ageVal,
+      sex:       document.getElementById('r_sex').value,
+      status, calamity,
+      location:  document.getElementById('r_location').value.trim(),
+      city:      document.getElementById('r_city').value.trim(),
+      contact:   document.getElementById('r_contact').value.trim(),
+      notes:     document.getElementById('r_notes').value.trim(),
+      photo:     document.getElementById('r_photo').value.trim(),
+      reportedBy:   currentUser ? currentUser.username : 'Anonymous',
+      dateReported: formatDateTime(new Date())
+    };
+    await api({ sheet: SHEETS.VICTIMS, action: 'save', data: record });
+    allVictims.push(record);
+    clearReportForm();
+    toast(`Record for ${fname} ${lname} submitted successfully!`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Submit Report'; }
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN PAGE
+// ═══════════════════════════════════════════════
+async function initAdmin() {
+  document.getElementById('cfg_url').value = CONFIG.url;
+  document.getElementById('cfg_key').value = CONFIG.key;
+  await refreshAdmin();
+}
+
+async function refreshAdmin() {
+  showLoading('Loading records...');
+  try {
+    allVictims = ensureIds((await apiGet(SHEETS.VICTIMS, 'getAll')) || [], 'V');
+    updateStats();
+    renderAdminTable(allVictims);
+    populateFilters();
+  } catch(e) { toast(e.message, 'error'); }
+  finally { hideLoading(); }
+}
+
+function updateStats() {
+  const counts = { Safe:0, Injured:0, Missing:0, Evacuated:0, Hospitalized:0, Deceased:0 };
+  allVictims.forEach(v => { if (counts[v.status] !== undefined) counts[v.status]++; });
+  document.getElementById('st-total').textContent       = allVictims.length;
+  document.getElementById('st-safe').textContent        = counts.Safe;
+  document.getElementById('st-injured').textContent     = counts.Injured;
+  document.getElementById('st-missing').textContent     = counts.Missing;
+  document.getElementById('st-evacuated').textContent   = counts.Evacuated;
+  document.getElementById('st-hospitalized').textContent= counts.Hospitalized;
+}
+
+function renderAdminTable(data) {
+  const tbody = document.getElementById('adminTableBody');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text2);padding:40px;">No records found.</td></tr>'; return; }
+  tbody.innerHTML = data.map(v => {
+    const name = `${v.firstName||''} ${v.lastName||''}`.trim() || '(Unknown)';
+    return `<tr>
+      <td style="font-size:0.75rem;color:var(--text2);font-family:monospace;">${escHtml(v.id)||'—'}</td>
+      <td><strong>${escHtml(name)}</strong></td>
+      <td>${escHtml(v.age)||'—'}</td>
+      <td>${statusBadge(v.status)}</td>
+      <td>${v.calamity ? `<span class="calamity-badge">${escHtml(v.calamity)}</span>` : '—'}</td>
+      <td>${escHtml(v.location||v.city)||'—'}</td>
+      <td>${escHtml(v.reportedBy)||'—'}</td>
+      <td style="font-size:0.8rem;color:var(--text2);">${escHtml(v.dateReported)||'—'}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-secondary btn-sm" onclick="openEditRecord('${escHtml(v.id)}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRecord('${escHtml(v.id)}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAdminTable() {
+  const q  = document.getElementById('adminSearchInput').value.toLowerCase();
+  const s  = document.getElementById('adminStatusFilter').value;
+  const filtered = allVictims.filter(v => {
+    const name = `${v.firstName||''} ${v.lastName||''}`.trim().toLowerCase();
+    return (!q || name.includes(q) || (v.city||'').toLowerCase().includes(q) || (v.calamity||'').toLowerCase().includes(q))
+      && (!s || v.status === s);
+  });
+  renderAdminTable(filtered);
+}
+
+function populateEditCalamityDropdown(selectedValue) {
+  const sel = document.getElementById('edit_calamity');
+  // Clear all options except placeholder
+  Array.from(sel.options).filter(o => o.value !== '').forEach(o => o.remove());
+  allEvents.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.name;
+    opt.textContent = e.name;
+    sel.appendChild(opt);
+  });
+  sel.value = selectedValue || '';
+}
+
+function previewEditPhoto(input) {
+  const prev = document.getElementById('editPhotoPreview');
+  if (input.value) { prev.src = input.value; prev.classList.add('visible'); }
+  else prev.classList.remove('visible');
+}
+
+function openEditRecord(id) {
+  const v = allVictims.find(x => String(x.id) === String(id));
+  if (!v) return;
+  document.getElementById('edit_id').value       = v.id;
+  document.getElementById('edit_fname').value    = v.firstName||'';
+  document.getElementById('edit_lname').value    = v.lastName||'';
+  document.getElementById('edit_age').value      = v.age||'';
+  document.getElementById('edit_sex').value      = v.sex||'';
+  document.getElementById('edit_status').value   = v.status||'';
+  document.getElementById('edit_location').value = v.location||'';
+  document.getElementById('edit_city').value     = v.city||'';
+  document.getElementById('edit_contact').value  = v.contact||'';
+  document.getElementById('edit_notes').value    = v.notes||'';
+  document.getElementById('edit_photo').value    = v.photo||'';
+  const prev = document.getElementById('editPhotoPreview');
+  if (v.photo) { prev.src = v.photo; prev.classList.add('visible'); }
+  else prev.classList.remove('visible');
+  populateEditCalamityDropdown(v.calamity||'');
+  document.getElementById('modalEditTitle').textContent = 'Edit Record';
+  document.getElementById('btnSaveEdit').textContent = 'Save Changes';
+  document.getElementById('btnSaveEdit').onclick = saveEditRecord;
+  openModal('modalEdit');
+}
+
+async function saveEditRecord() {
+  const id     = document.getElementById('edit_id').value;
+  const v      = allVictims.find(x => String(x.id) === String(id));
+  if (!v) return;
+  const fname  = document.getElementById('edit_fname').value.trim();
+  const lname  = document.getElementById('edit_lname').value.trim();
+  const status = document.getElementById('edit_status').value;
+  const ageVal = document.getElementById('edit_age').value.trim();
+  if (!fname || !lname) { toast('First and Last name are required.','error'); return; }
+  if (!status) { toast('Please select a status.','error'); return; }
+  if (ageVal && (isNaN(ageVal) || Number(ageVal) < 0 || Number(ageVal) > 120)) {
+    toast('Please enter a valid age (0–120).','error'); return;
+  }
+  showLoading('Saving...');
+  try {
+    const updated = {
+      ...v,
+      firstName: fname,
+      lastName:  lname,
+      age:       ageVal,
+      sex:       document.getElementById('edit_sex').value,
+      status,
+      calamity:  document.getElementById('edit_calamity').value,
+      location:  document.getElementById('edit_location').value.trim(),
+      city:      document.getElementById('edit_city').value.trim(),
+      contact:   document.getElementById('edit_contact').value.trim(),
+      notes:     document.getElementById('edit_notes').value.trim(),
+      photo:     document.getElementById('edit_photo').value.trim(),
+    };
+    await api({ sheet: SHEETS.VICTIMS, action: 'save', data: updated });
+    Object.assign(v, updated);
+    closeModal('modalEdit');
+    updateStats();
+    filterAdminTable();
+    toast('Record updated successfully!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { hideLoading(); }
+}
+
+async function deleteRecord(id) {
+  if (!confirm('Delete this record? This cannot be undone.')) return;
+  showLoading('Deleting...');
+  try {
+    await api({ sheet: SHEETS.VICTIMS, action: 'delete', key: id });
+    allVictims = allVictims.filter(v => String(v.id) !== String(id));
+    updateStats();
+    filterAdminTable();
+    toast('Record deleted.', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { hideLoading(); }
+}
+
+// ═══════════════════════════════════════════════
+// CALAMITY EVENTS TAB
+// ═══════════════════════════════════════════════
+async function loadEventsTab() {
+  showLoading('Loading events...');
+  try {
+    allEvents = ensureIds((await apiGet(SHEETS.EVENTS, 'getAll')) || [], 'EV');
+    renderEventsTable();
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+function renderEventsTable() {
+  const tbody = document.getElementById('eventsTableBody');
+  if (!allEvents.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text2);padding:40px;">No events yet. Add a calamity event to get started.</td></tr>'; return; }
+  tbody.innerHTML = allEvents.map(e => `<tr>
+    <td><strong>${escHtml(e.name)||'—'}</strong></td>
+    <td>${escHtml(e.type)||'—'}</td>
+    <td>${escHtml(e.area)||'—'}</td>
+    <td>${escHtml(e.date)||'—'}</td>
+    <td><span class="status-badge ${e.status==='Active'?'safe':'deceased'}">${escHtml(e.status)||'—'}</span></td>
+    <td>
+      <div class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEditEvent('${escHtml(e.id)}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteEvent('${escHtml(e.id)}')">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function openAddEventModal() {
+  document.getElementById('ev_id').value    = '';
+  document.getElementById('ev_name').value  = '';
+  document.getElementById('ev_type').value  = 'Typhoon';
+  document.getElementById('ev_area').value  = '';
+  document.getElementById('ev_date').value  = '';
+  document.getElementById('ev_active').value= 'Active';
+  document.getElementById('modalEventTitle').textContent = 'Add Calamity Event';
+  openModal('modalEvent');
+}
+
+function openEditEvent(id) {
+  const e = allEvents.find(x => String(x.id) === String(id));
+  if (!e) return;
+  document.getElementById('ev_id').value    = e.id;
+  document.getElementById('ev_name').value  = e.name||'';
+  document.getElementById('ev_type').value  = e.type||'Typhoon';
+  document.getElementById('ev_area').value  = e.area||'';
+  document.getElementById('ev_date').value  = e.date||'';
+  document.getElementById('ev_active').value= e.status||'Active';
+  document.getElementById('modalEventTitle').textContent = 'Edit Calamity Event';
+  openModal('modalEvent');
+}
+
+async function saveEvent() {
+  const name = document.getElementById('ev_name').value.trim();
+  if (!name) { toast('Event name is required.','error'); return; }
+  showLoading('Saving...');
+  try {
+    const id = document.getElementById('ev_id').value || ('EV-'+Date.now());
+    const ev = { id, name, type: document.getElementById('ev_type').value, area: document.getElementById('ev_area').value.trim(), date: document.getElementById('ev_date').value, status: document.getElementById('ev_active').value };
+    await api({ sheet: SHEETS.EVENTS, action: 'save', data: ev });
+    const existing = allEvents.findIndex(x => String(x.id) === String(id));
+    if (existing >= 0) allEvents[existing] = ev; else allEvents.push(ev);
+    closeModal('modalEvent');
+    renderEventsTable();
+    toast('Event saved!','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+async function deleteEvent(id) {
+  const ev = allEvents.find(x => String(x.id) === String(id));
+  const evName = ev?.name || '';
+  const linked = allVictims.filter(v => v.calamity === evName).length;
+  const msg = linked > 0
+    ? `This event has ${linked} victim record(s) linked to it. Deleting will leave those records without a valid event. Continue?`
+    : 'Delete this calamity event?';
+  if (!confirm(msg)) return;
+  showLoading('Deleting...');
+  try {
+    await api({ sheet: SHEETS.EVENTS, action: 'delete', key: id });
+    allEvents = allEvents.filter(e => String(e.id) !== String(id));
+    renderEventsTable();
+    toast('Event deleted.','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+// ═══════════════════════════════════════════════
+// USERS TAB
+// ═══════════════════════════════════════════════
+async function loadUsersTab() {
+  if (currentUser?.role !== 'Admin') {
+    document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:40px;">⛔ Only Admins can manage user accounts.</td></tr>';
+    return;
+  }
+  showLoading('Loading users...');
+  try {
+    allUsers = ensureIds((await apiGet(SHEETS.USERS, 'getAll')) || [], 'USR');
+    renderUsersTable();
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!allUsers.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:40px;">No user accounts yet.</td></tr>'; return; }
+  tbody.innerHTML = allUsers.map(u => `<tr>
+    <td><strong>${escHtml(u.username)||'—'}</strong></td>
+    <td>${escHtml(u.fullName)||'—'}</td>
+    <td><span style="color:${roleColor(u.role)};font-weight:600;">${escHtml(u.role)||'—'}</span></td>
+    <td><span class="status-badge ${u.status==='Active'?'safe':'deceased'}">${escHtml(u.status)||'—'}</span></td>
+    <td>
+      <div class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openEditUser('${escHtml(u.id)}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${escHtml(u.id)}')">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function openAddUserModal() {
+  document.getElementById('usr_id').value       = '';
+  document.getElementById('usr_name').value     = '';
+  document.getElementById('usr_username').value = '';
+  document.getElementById('usr_password').value = '';
+  document.getElementById('usr_role').value     = 'Volunteer';
+  document.getElementById('usr_status').value   = 'Active';
+  document.getElementById('modalUserTitle').textContent = 'Add User Account';
+  openModal('modalUser');
+}
+
+async function openEditUser(id) {
+  // Ensure allUsers is populated before editing (may not be if tab was never visited)
+  if (!allUsers.length) {
+    showLoading('Loading users...');
+    try { allUsers = ensureIds((await apiGet(SHEETS.USERS, 'getAll')) || [], 'USR'); }
+    catch(e) { toast(e.message,'error'); hideLoading(); return; }
+    finally { hideLoading(); }
+  }
+  const u = allUsers.find(x => String(x.id) === String(id));
+  if (!u) { toast('User not found.','error'); return; }
+  document.getElementById('usr_id').value       = u.id;
+  document.getElementById('usr_name').value     = u.fullName||'';
+  document.getElementById('usr_username').value = u.username||'';
+  document.getElementById('usr_password').value = '';
+  document.getElementById('usr_role').value     = u.role||'Volunteer';
+  document.getElementById('usr_status').value   = u.status||'Active';
+  document.getElementById('modalUserTitle').textContent = 'Edit User Account';
+  openModal('modalUser');
+}
+
+async function saveUser() {
+  const uname = document.getElementById('usr_username').value.trim();
+  const fname = document.getElementById('usr_name').value.trim();
+  if (!uname || !fname) { toast('Username and Full Name are required.','error'); return; }
+  const rawId = document.getElementById('usr_id').value;
+  const isNew = !rawId;
+  const pw    = document.getElementById('usr_password').value;
+  if (isNew && !pw) { toast('Password is required for new accounts.','error'); return; }
+
+  showLoading('Saving...');
+  try {
+    const id       = rawId || ('USR-'+Date.now());
+    const existing = allUsers.find(x => String(x.id) === String(id));
+    const savedPw  = pw || existing?.password || '';
+    if (!savedPw) { toast('Password could not be retrieved. Please enter a new password.','error'); hideLoading(); return; }
+    const user = {
+      id, fullName: fname, username: uname,
+      password: savedPw,
+      role:   document.getElementById('usr_role').value,
+      status: document.getElementById('usr_status').value
+    };
+    await api({ sheet: SHEETS.USERS, action: 'save', data: user });
+    const idx = allUsers.findIndex(x => String(x.id) === String(id));
+    if (idx >= 0) allUsers[idx] = user; else allUsers.push(user);
+    closeModal('modalUser');
+    renderUsersTable();
+    toast('User account saved!','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user account?')) return;
+  showLoading('Deleting...');
+  try {
+    await api({ sheet: SHEETS.USERS, action: 'delete', key: id });
+    allUsers = allUsers.filter(u => String(u.id) !== String(id));
+    renderUsersTable();
+    toast('User deleted.','success');
+  } catch(e) { toast(e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+async function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  if (!username || !password) { toast('Enter username and password.','error'); return; }
+
+  const btn      = document.getElementById('btnLogin');
+  btn.disabled   = true; btn.textContent = 'Signing in...';
+  showLoading('Authenticating...');
+
+  try {
+    if (!CONFIG.url || !CONFIG.key) throw new Error('App is not connected to Google Sheets. Use the 🔧 Settings button to configure the connection.');
+    const matches = await api({ sheet: SHEETS.USERS, action: 'query', field: 'username', value: username });
+    if (!matches || !matches.length) throw new Error('Invalid username or password.');
+    const user = matches[0];
+    if (String(user.password) !== String(password)) throw new Error('Invalid username or password.');
+    if (user.status === 'Inactive') throw new Error('This account has been deactivated.');
+
+    currentUser = user;
+    localStorage.setItem('st_session', JSON.stringify({ id: user.id, username: user.username, role: user.role, fullName: user.fullName }));
+    updateNavForUser();
+    toast(`Welcome back, ${user.fullName||user.username}!`, 'success');
+    showPage('search');
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    hideLoading();
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('st_session');
+  updateNavForUser();
+  showPage('search');
+  toast('Signed out successfully.','info');
+}
+
+function updateNavForUser() {
+  const loggedIn = !!currentUser;
+  const isAdmin  = currentUser?.role === 'Admin';
+
+  // Show/hide login tab in both desktop and mobile navs
+  const loginBtns  = document.querySelectorAll('[data-page="login"]');
+  const adminBtns  = document.querySelectorAll('[data-page="admin"]');
+  loginBtns.forEach(b => b.style.display = loggedIn ? 'none' : '');
+  adminBtns.forEach(b => b.style.display = isAdmin  ? ''     : 'none');
+
+  document.getElementById('btnLogout').classList.toggle('visible', loggedIn);
+  document.getElementById('navUserBadge').classList.toggle('visible', loggedIn);
+  if (loggedIn) {
+    document.getElementById('navUserName').textContent = currentUser.fullName || currentUser.username;
+    document.getElementById('roleDot').style.background = roleColor(currentUser.role);
+  }
+}
+
+function restoreSession() {
+  const saved = localStorage.getItem('st_session');
+  if (saved) {
+    try { currentUser = JSON.parse(saved); updateNavForUser(); } catch(e) { localStorage.removeItem('st_session'); }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN SETTINGS TAB
+// ═══════════════════════════════════════════════
+function saveConfig() {
+  const url = document.getElementById('cfg_url').value.trim();
+  const key = document.getElementById('cfg_key').value.trim();
+  if (!url || !key) { toast('Both URL and API Key are required.','error'); return; }
+  CONFIG = { url, key };
+  localStorage.setItem('st_url', url);
+  localStorage.setItem('st_key', key);
+  // Sync to FAB settings fields
+  document.getElementById('fab_cfg_url').value = url;
+  document.getElementById('fab_cfg_key').value = key;
+  toast('Configuration saved!','success');
+}
+
+async function testConnection() {
+  showLoading('Testing connection...');
+  try {
+    const url = document.getElementById('cfg_url').value.trim();
+    const key = document.getElementById('cfg_key').value.trim();
+    if (!url || !key) throw new Error('Enter URL and API Key first.');
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 15000);
+    const res  = await fetch(url, {
+      method:'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ apiKey: key, action: 'ping' }),
+      signal: controller.signal
+    });
+    clearTimeout(tid);
+    const json = await res.json();
+    if (json.status === 'success') toast(`✅ Connected! Server time: ${json.data?.time||'OK'}`, 'success');
+    else throw new Error(json.message);
+  } catch(e) {
+    toast('Connection failed: ' + (e.name === 'AbortError' ? 'Timed out' : e.message), 'error');
+  }
+  hideLoading();
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    const sp = document.getElementById('settingsOverlay');
+    if (sp && sp.classList.contains('open')) closeSettingsPanel();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  applyStoredTheme();
+  restoreSession();
+  updateMessengerFooter();
+
+  // Pre-fill admin settings fields with active config
+  const cfgUrl = document.getElementById('cfg_url');
+  const cfgKey = document.getElementById('cfg_key');
+  if (cfgUrl) cfgUrl.value = CONFIG.url;
+  if (cfgKey) cfgKey.value = CONFIG.key;
+
+  // FIX 22: Attach modal backdrop click listeners after DOM is ready
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // FIX 22: Attach settings overlay backdrop click
+  const so = document.getElementById('settingsOverlay');
+  if (so) so.addEventListener('click', e => { if (e.target === so) closeSettingsPanel(); });
+
+  // FIX 23: Compensate page content for sticky mobile nav bar height
+  function adjustMobileOffset() {
+    const mobileNav = document.getElementById('mobileNavMenu');
+    if (!mobileNav) return;
+    const visible = window.getComputedStyle(mobileNav).display !== 'none';
+    // No extra offset needed since mobile-nav is now sticky (not fixed)
+  }
+  adjustMobileOffset();
+  window.addEventListener('resize', adjustMobileOffset);
+
+  // FIX 24: Prevent body scroll when modal is open (mobile UX)
+  const observer = new MutationObserver(() => {
+    const anyOpen = document.querySelector('.modal-overlay.open, .settings-overlay.open');
+    document.body.style.overflow = anyOpen ? 'hidden' : '';
+  });
+  document.querySelectorAll('.modal-overlay, .settings-overlay').forEach(el => {
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+
+  loadLatest();
+});
+</script>
+</body>
+</html>
